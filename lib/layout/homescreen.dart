@@ -6,6 +6,7 @@ import 'package:todo_project/modules/archived.dart';
 import 'package:todo_project/modules/done.dart';
 import 'package:todo_project/modules/tasks.dart';
 import 'package:todo_project/shared/compo/components.dart';
+import 'package:todo_project/shared/compo/constants.dart';
 
 class HomeLayout extends StatefulWidget {
   const HomeLayout({Key? key}) : super(key: key);
@@ -31,12 +32,14 @@ class _HomeLayoutState extends State<HomeLayout> {
   TextEditingController dateController = TextEditingController();
 
   int currentIndex = 0;
+
   // this List of Screens we change
   List<Widget> screens = [
     Tasks(),
     Done(),
     Archived(),
   ];
+  // this List of TitleOfScreen we change
   List<String> titles = [
     'Tasks',
     'Done',
@@ -58,7 +61,9 @@ class _HomeLayoutState extends State<HomeLayout> {
           titles[currentIndex],
         ),
       ),
-      body: screens[currentIndex],
+      body: tasks.length > 0
+          ? screens[currentIndex]
+          : Center(child: CircularProgressIndicator()),
       floatingActionButton: FloatingActionButton(
         child: Icon(icon),
         onPressed: () {
@@ -68,11 +73,15 @@ class _HomeLayoutState extends State<HomeLayout> {
                 title: titleController.text,
                 time: timeController.text,
                 date: dateController.text,
-              ).then((value) {});
-              Navigator.pop(context);
-              isBottomSheetShown = false;
-              setState(() {
-                icon = Icons.add;
+              ).then((value) {
+                getDataFromDatabase(db).then((value) {
+                  Navigator.pop(context);
+                  setState(() {
+                    isBottomSheetShown = false;
+                    icon = Icons.add;
+                    tasks = value;
+                  });
+                });
               });
             }
           } else {
@@ -148,6 +157,11 @@ class _HomeLayoutState extends State<HomeLayout> {
         print('error when created database ${error.toString()}');
       });
     }, onOpen: (Database db) {
+      getDataFromDatabase(db).then((value) {
+        setState(() {
+          tasks = value;
+        });
+      });
       print('database opened');
     });
   }
@@ -160,13 +174,17 @@ class _HomeLayoutState extends State<HomeLayout> {
     await db.transaction((txn) async {
       await txn
           .rawInsert(
-              'INSERT INTO tasks (title, date, time, status) VALUES("$title","$time","$date","new")')
+              'INSERT INTO tasks (title, date, time, status) VALUES("$title","$date","$time","new")')
           .then((value) {
         print('$value inserted successfully');
       }).catchError((error) {
         print('error when inserting new records ${error.toString()}');
       });
     });
+  }
+
+  Future<List<Map>> getDataFromDatabase(db) async {
+    return await db.rawQuery("SELECT * FROM tasks");
   }
 
   Widget ContainerBottomSheet() => Container(
