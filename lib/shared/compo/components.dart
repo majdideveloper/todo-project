@@ -30,9 +30,10 @@ Widget defaultButton({
 
 Widget defaultFormField({
   required TextEditingController controller,
-  required TextInputType type,
+  TextInputType? type,
   void Function(String)? onSubmit,
   void Function(String)? onChange,
+  void Function()? onTap,
   bool isPassword = false,
   required String? Function(String?)? validate,
   required String label,
@@ -45,6 +46,7 @@ Widget defaultFormField({
       obscureText: isPassword,
       onFieldSubmitted: onSubmit,
       onChanged: onChange,
+      onTap: onTap,
       validator: validate,
       decoration: InputDecoration(
         labelText: label,

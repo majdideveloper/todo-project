@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:intl/intl.dart';
+
 import 'package:todo_project/modules/archived.dart';
 import 'package:todo_project/modules/done.dart';
 import 'package:todo_project/modules/tasks.dart';
@@ -17,13 +19,16 @@ class _HomeLayoutState extends State<HomeLayout> {
   late Database db;
 // key for bottom sheet
   var scaffoldKey = GlobalKey<ScaffoldState>();
+  var formKey = GlobalKey<FormState>();
   // this booleen is about open bottomsheet and close
   bool isBottomSheetShown = false;
   // this variable icondata when open bottomsheet and when closed change
   IconData icon = Icons.add;
 
   // there controller about bottomsheet form
-  var titleController = TextEditingController();
+  TextEditingController titleController = TextEditingController();
+  TextEditingController timeController = TextEditingController();
+  TextEditingController dateController = TextEditingController();
 
   int currentIndex = 0;
   // this List of Screens we change
@@ -58,41 +63,29 @@ class _HomeLayoutState extends State<HomeLayout> {
         child: Icon(icon),
         onPressed: () {
           if (isBottomSheetShown) {
-            Navigator.pop(context);
-            isBottomSheetShown = false;
-
-            setState(() {
+            if (formKey.currentState!.validate()) {
+              insertToDatabase(
+                title: titleController.text,
+                time: timeController.text,
+                date: dateController.text,
+              ).then((value) {});
+              Navigator.pop(context);
               isBottomSheetShown = false;
-              icon = Icons.add;
-            });
+              setState(() {
+                icon = Icons.add;
+              });
+            }
           } else {
-            scaffoldKey.currentState!.showBottomSheet((context) => Container(
-                  color: Colors.grey[400],
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          color: Colors.grey[200],
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: defaultFormField(
-                                controller: titleController,
-                                type: TextInputType.text,
-                                validate: (String? value) {
-                                  if (value!.isEmpty) {
-                                    return 'title must not be empty';
-                                  }
-                                },
-                                label: 'title',
-                                prefix: Icons.title),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ));
+            scaffoldKey.currentState!
+                .showBottomSheet((context) => ContainerBottomSheet(),
+                    backgroundColor: Colors.grey[600])
+                .closed
+                .then((value) {
+              isBottomSheetShown = false;
+              setState(() {
+                icon = Icons.add;
+              });
+            });
 
             setState(() {
               isBottomSheetShown = true;
@@ -159,11 +152,15 @@ class _HomeLayoutState extends State<HomeLayout> {
     });
   }
 
-  void insertToDatabase() {
-    db.transaction((txn) async {
+  Future insertToDatabase({
+    required String title,
+    required String time,
+    required String date,
+  }) async {
+    await db.transaction((txn) async {
       await txn
           .rawInsert(
-              'INSERT INTO tasks (title, date, time, status) VALUES("first tasks","0111","13:33","new")')
+              'INSERT INTO tasks (title, date, time, status) VALUES("$title","$time","$date","new")')
           .then((value) {
         print('$value inserted successfully');
       }).catchError((error) {
@@ -171,4 +168,88 @@ class _HomeLayoutState extends State<HomeLayout> {
       });
     });
   }
+
+  Widget ContainerBottomSheet() => Container(
+        color: Colors.grey[400],
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  color: Colors.grey[200],
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: defaultFormField(
+                        controller: titleController,
+                        type: TextInputType.text,
+                        validate: (String? value) {
+                          if (value!.isEmpty) {
+                            return 'title must not be empty';
+                          }
+                        },
+                        label: 'title',
+                        prefix: Icons.title),
+                  ),
+                ),
+                Container(
+                  color: Colors.grey[200],
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: defaultFormField(
+                        controller: timeController,
+                        type: TextInputType.none,
+                        onTap: () {
+                          showTimePicker(
+                                  context: context,
+                                  initialTime: TimeOfDay.now())
+                              .then((value) {
+                            timeController.text = value!.format(context);
+                            print(value);
+                          });
+                        },
+                        validate: (String? value) {
+                          if (value!.isEmpty) {
+                            return 'time must not be empty';
+                          }
+                        },
+                        label: 'time task',
+                        prefix: Icons.watch),
+                  ),
+                ),
+                Container(
+                  color: Colors.grey[200],
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: defaultFormField(
+                      controller: dateController,
+                      type: TextInputType.none,
+                      onTap: () {
+                        showDatePicker(
+                                context: context,
+                                initialDate: DateTime.now(),
+                                firstDate: DateTime.now(),
+                                lastDate: DateTime(2200))
+                            .then((value) {
+                          dateController.text =
+                              DateFormat.yMMMd().format(value!);
+                        });
+                      },
+                      validate: (String? value) {
+                        if (value!.isEmpty) {
+                          return 'date must not be empty';
+                        }
+                      },
+                      label: 'date task',
+                      prefix: Icons.calendar_today,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
 }
