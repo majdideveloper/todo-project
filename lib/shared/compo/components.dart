@@ -61,3 +61,37 @@ Widget defaultFormField({
         border: OutlineInputBorder(),
       ),
     );
+
+Widget bulidTaskItem(Map model) => Padding(
+      padding: const EdgeInsets.all(10.0),
+      child: Row(
+        children: [
+          CircleAvatar(
+            child: Text(model['time']),
+            radius: 40.0,
+          ),
+          SizedBox(
+            width: 20.0,
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                model['title'],
+                style: TextStyle(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                model['date'],
+                style: TextStyle(
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
