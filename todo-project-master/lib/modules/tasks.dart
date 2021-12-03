@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:todo_project/shared/compo/components.dart';
-import 'package:todo_project/shared/compo/constants.dart';
+
+import 'package:todo_project/shared/components/components.dart';
+import 'package:todo_project/shared/components/constants.dart';
 
 class Tasks extends StatelessWidget {
   @override
